@@ -535,6 +535,7 @@ class ProjectTemplateSerializer(serializers.LightSerializer):
 
 
 class GameSerializer(serializers.LightSerializer):
+    id = Field()
     uuid = Field()
     name = Field()
     project = Field(attr="project_id")
