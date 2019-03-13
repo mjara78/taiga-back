@@ -133,18 +133,21 @@ class MilestoneViewSet(HistoryResourceMixin, WatchedResourceMixin,
         current_date = milestone.estimated_start
         sumTotalPoints = sum(total_points.values())
         optimal_points = sumTotalPoints
-        milestone_days = (milestone.estimated_finish - milestone.estimated_start).days
+        milestone_days =  self.count_weekdays(milestone.estimated_start, milestone.estimated_finish)
         optimal_points_per_day = sumTotalPoints / milestone_days if milestone_days else 0
 
         while current_date <= milestone.estimated_finish:
+            if self.is_weekday(current_date):
+                optimal_points -= optimal_points_per_day
+
             milestone_stats['days'].append({
                 'day': current_date,
                 'name': current_date.day,
                 'open_points':  sumTotalPoints - milestone.total_closed_points_by_date(current_date),
                 'optimal_points': optimal_points,
             })
+
             current_date = current_date + datetime.timedelta(days=1)
-            optimal_points -= optimal_points_per_day
 
         return response.Ok(milestone_stats)
 
@@ -211,6 +214,21 @@ class MilestoneViewSet(HistoryResourceMixin, WatchedResourceMixin,
 
         return response.NoContent()
 
+    def count_weekdays(self, start, finish):
+        count = 0
+        current_date = start
+
+        while current_date <= finish:
+            if self.is_weekday(current_date):
+                count += 1
+
+            current_date = current_date + datetime.timedelta(days=1)
+
+        return count
+
+    def is_weekday(self, date):
+        weekno = date.weekday()
+        return weekno < 5
 
 class MilestoneWatchersViewSet(WatchersViewSetMixin, ModelListViewSet):
     permission_classes = (permissions.MilestoneWatchersPermission,)
